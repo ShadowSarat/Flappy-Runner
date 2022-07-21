@@ -1,5 +1,8 @@
 
 window.addEventListener('load', init, false);
+alert("Press up arrow to jump, you have 3 lives");
+
+var lives=200;
 
 var sceneWidth;
 
@@ -23,7 +26,7 @@ var rollingGroundSphere;
 
 var heroSphere;
 
-var rollingSpeed=0.008;
+var rollingSpeed=0.004;
 
 var heroRollingSpeed;
 
@@ -35,15 +38,11 @@ var sphericalHelper;
 
 var pathAngleValues;
 
-var heroBaseY=1.8;
+var heroBaseY=2;
 
-var bounceValue=0.1;
+var bounceValue=0.2;
 
-var gravity=0.006;
-
-var leftLane=-1;
-
-var rightLane=1;
+var gravity=0.003;
 
 var middleLane=0;
 
@@ -96,7 +95,7 @@ function createScene(){
     sceneWidth=window.innerWidth;
     sceneHeight=window.innerHeight;
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2( 0xf0fff0, 0.14 );
+    scene.fog = new THREE.FogExp2( 0xf0fff0, 0.1 );
     camera = new THREE.PerspectiveCamera( 60, sceneWidth / sceneHeight, 0.1, 1000 );
     renderer = new THREE.WebGLRenderer({alpha:true});
     renderer.setClearColor(0xfffafa, 1); 
@@ -113,13 +112,15 @@ function createScene(){
 	addLight();
 	addExplosion();
 	
-	camera.position.z = 6.5;
-	camera.position.y = 3.5;
+	camera.position.z = 12.5;
+	camera.position.y = 4.5;
 	orbitControl = new THREE.OrbitControls( camera, renderer.domElement );
 	orbitControl.addEventListener( 'change', render );
 	orbitControl.noKeys = true;
 	orbitControl.noPan = true;
 	orbitControl.enableZoom = true;
+	orbitControl.minDistance = 8;
+	orbitControl.maxDistance = 10;
 	orbitControl.minPolarAngle = 1.1;
 	orbitControl.maxPolarAngle = 1.1;
 	orbitControl.minAzimuthAngle = -0.2;
@@ -191,39 +192,9 @@ function addHero(){
 function addWorld(){
 	var sides=40;
 	var tiers=40;
-	var sphereGeometry = new THREE.SphereGeometry( worldRadius, sides,tiers);
-	var sphereMaterial = new THREE.MeshStandardMaterial( { color: 0xfffafa ,shading:THREE.FlatShading} )
-	
-	var vertexIndex;
-	var vertexVector= new THREE.Vector3();
-	var nextVertexVector= new THREE.Vector3();
-	var firstVertexVector= new THREE.Vector3();
-	var offset= new THREE.Vector3();
-	var currentTier=1;
-	var lerpValue=0.5;
-	var heightValue;
-	var maxHeight=0.07;
-	for(var j=1;j<tiers-2;j++){
-		currentTier=j;
-		for(var i=0;i<sides;i++){
-			vertexIndex=(currentTier*sides)+1;
-			vertexVector=sphereGeometry.vertices[i+vertexIndex].clone();
-			if(j%2!==0){
-				if(i==0){
-					firstVertexVector=vertexVector.clone();
-				}
-				nextVertexVector=sphereGeometry.vertices[i+vertexIndex+1].clone();
-				if(i==sides-1){
-					nextVertexVector=firstVertexVector;
-				}
-				lerpValue=(Math.random()*(0.75-0.25))+0.25;
-				vertexVector.lerp(nextVertexVector,lerpValue);
-			}
-			heightValue=(Math.random()*maxHeight)-(maxHeight/2);
-			offset=vertexVector.clone().normalize().multiplyScalar(heightValue);
-			sphereGeometry.vertices[i+vertexIndex]=(vertexVector.add(offset));
-		}
-	}
+	var sphereGeometry = new THREE.CylinderGeometry( worldRadius,worldRadius, sides,tiers);
+	var sphereMaterial = new THREE.MeshStandardMaterial( { color: 0x303030 ,shading:THREE.FlatShading} )
+
 	rollingGroundSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
 	rollingGroundSphere.receiveShadow = true;
 	rollingGroundSphere.castShadow=false;
@@ -246,14 +217,11 @@ function addLight(){
 	sun.shadow.camera.far = 50 ;
 }
 function addPathTree(){
-	var options=[0,1,2];
+	var options=[1];
 	var lane= Math.floor(Math.random()*3);
+	lane=1;
 	addTree(true,lane);
-	options.splice(lane,1);
-	if(Math.random()>0.5){
-		lane= Math.floor(Math.random()*2);
-		addTree(true,options[lane]);
-	}
+	
 }
 function addWorldTrees(){
 	var numTrees=36;
@@ -346,7 +314,9 @@ function doTreeLogic(){
 			if(pipePos.distanceTo(heroSphere.position)<=0.6){
 				console.log("hit");
 				hasCollided=true;
+					
 				explode();
+				
 			}
 		}
 	});
@@ -369,8 +339,13 @@ function doExplosionLogic(){
 		explosionPower-=0.001;
 	}else{
 		particles.visible=false;
+		
 	}
 	particleGeometry.verticesNeedUpdate = true;
+	lives=lives-1;
+				if (lives < 1) { 
+					gameOver();
+					}
 }
 function explode(){
 	particles.position.y=2;
@@ -385,12 +360,13 @@ function explode(){
 	}
 	explosionPower=1.07;
 	particles.visible=true;
+	
 }
 function render(){
     renderer.render(scene, camera);
 }
 function gameOver () {
-  //need to add
+	alert("Game Over!");
 }
 function onWindowResize() {
 	sceneHeight = window.innerHeight;
